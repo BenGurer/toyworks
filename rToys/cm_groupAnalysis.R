@@ -13,6 +13,16 @@ cm_dataset <- cm_dataset[!row.has.na,]
 cm_dataset %>% filter(Analysis == 'pRF') ->  cm_dataset_2plot
 filter(cm_dataset_2plot,SubjectID == 2) ->  sub_cm_dataset_2plot
 
+
+cm_dataset %>% filter(Analysis == 'pRF') %>% 
+  filter(Location %in% c("posterior")) ->  cm_dataset_2plot_loc
+# anterior
+# posterior
+
+cm_dataset %>% filter(Analysis == 'pRF') %>% 
+  filter(between(Frequency_nERB, 10, 20)) %>% 
+  filter(Hemisphere %in% c("Left")) ->  cm_dataset_2plot_hemi
+
 # for(i in dataList){for(j in i){print(j)}}
 
 # sapply(filenames, FUN = analyze)
@@ -27,7 +37,7 @@ nObservations <- 8
 for(name in domain_names){
   
   rm(params)
-  params <- get_parameters(cm_dataset_2plot,name)
+  params <- get_parameters(cm_dataset_2plot_hemi,name)
   print(name)
   cal_cortical_magnification(params,polyorder,nBins,nObservations,name)
   
