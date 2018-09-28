@@ -81,11 +81,13 @@ ve_dataset %>% filter(hrf != "Box Car") %>%
   filter(estimation == 'population Centre Frequency')  %>%
   filter(roi == 'Left' || roi == 'Right') -> ve_dataset_histo_acq
 # compare acquisitons - nERB scale
-ggplot(data = ve_dataset_histo_acq, mapping = aes(x = frequency_nERB, fill = acquistion)) + 
+testDensity <- ggplot(data = ve_dataset_histo_acq, mapping = aes(x = frequency_nERB, fill = acquistion)) + 
   geom_density(alpha=.3) +
   geom_vline(xintercept=stim_min_nERB, linetype="dashed", color = "red") +
   geom_vline(xintercept=stim_max_nERB, linetype="dashed", color = "red") +
   geom_vline(xintercept=stim_middle_nERB, linetype="dashed", color = "red")
+#+
+#geom_line(data=noisedata, aes(x= blah, y = blah)) add second y axis quick r tutorial page
 
 # compare acquisitons - kHz log10 scale
 ggplot(data = ve_dataset_histo_acq, mapping = aes(x = frequency_kHz, fill = acquistion)) + 
