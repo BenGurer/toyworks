@@ -18,45 +18,8 @@ bw_dataset = read.csv('Comparisions_beta_weights.csv')
 bw_dataset %>% filter(beta_averaging %in% c('Moving Average')) %>% 
   filter(roi %in% c("Left", "Right")) ->  bw_dataset_2plot
 
-row.has.na <- apply(bw_dataset_2plot, 1, function(x){any(is.na(x))})
-sum(row.has.na)
-bw_dataset_2plot <- bw_dataset_2plot[!row.has.na,]
-
-bw_dataset_2plot_sum <-summarySE(bw_dataset_2plot,measurevar="beta_weight",groupvars=c("beta_freq_NERB","acquistion"))
-
-# set label stuff
-stim_min_nERB_mv = 4.802
-stim_max_nERB_mv = 31.746
-stim_middle_nERB_mv = ((stim_max_nERB_mv - stim_min_nERB_mv) / 2) + stim_min_nERB_mv
-stim_lower_nERB_mv = ((stim_middle_nERB_mv - stim_min_nERB_mv) / 2) + stim_min_nERB_mv
-stim_upper_nERB_mv = stim_middle_nERB_mv + ((stim_middle_nERB_mv - stim_min_nERB_mv) / 2)
-#ticks_values <- c(4.802, 7.9365, 15.873, 23.8095, 31.746)
-bw_ticks_values <- c(stim_min_nERB_mv, stim_lower_nERB_mv, stim_middle_nERB_mv, stim_upper_nERB_mv, stim_max_nERB_mv)
-bw_ticks_labels <- nERB2kHz(bw_ticks_values)
-bw_ticks_labels <- round(bw_ticks_labels,digits=2)
-text_size = 9
-
-# plot data
-bw_plot <- ggplot(bw_dataset_2plot_sum, aes(x=beta_freq_NERB, y=beta_weight, colour=acquistion, fill=acquistion)) + 
-  geom_ribbon(aes(ymin=beta_weight-se, ymax=beta_weight+se), alpha=0.1, linetype="blank") +
-  geom_line() +
-  geom_point() +
-  geom_line(data=noise_dataset_2plot, aes(x=frequency_nERB, y=noise_SPLnorm, colour=NULL, fill=NULL),linetype="dashed")
-
-# add labels
-bw_plot <- bw_plot +
-  scale_x_continuous(breaks = bw_ticks_values, label = bw_ticks_labels) +
-  labs( x = "Frequency (kHz)", y = "Average Beta Weight (arb. units)") +
-  theme(legend.position="none") +
-  scale_colour_brewer(palette = "Set1") + 
-  scale_fill_brewer(palette = "Set1")
-
-# set sizes
-bw_plot <- bw_plot +
-  theme(axis.text.x = element_text(colour="grey20",size=text_size,angle=0,hjust=0.5,vjust=0,face="plain"),
-        axis.text.y = element_text(colour="grey20",size=text_size,angle=0,hjust=0,vjust=0.5,face="plain"),  
-        axis.title.x = element_text(colour="grey20",size=text_size,angle=0,hjust=0.5,vjust=0.5,face="plain"),
-        axis.title.y = element_text(colour="grey20",size=text_size,angle=90,hjust=0.5,vjust=0.5,face="plain"))
+legend_location <- c(0.1,0.9)
+bw_plot <- plot_av_beta_weights(bw_dataset_2plot, legend_location)
 
 bw_plot
 
@@ -65,6 +28,7 @@ save_plot("cm_av_beta_weights.png", bw_plot, device = "png", base_height = NULL,
           base_aspect_ratio = 1.1, base_width =  3.34646,dpi = 450)
 
 
+# difference and noise plots
 d_difference  <-  bw_dataset_2plot_sum %>% 
   select(c("acquistion", "beta_weight", "beta_freq_NERB")) %>% 
   spread(acquistion, beta_weight) %>% 
@@ -80,91 +44,23 @@ d_diff_se  <-  bw_dataset_2plot_sum %>%
 d <- bind_cols(d_difference,d_diff_se) %>% 
   select(-beta_freq_NERB1)
 
-data_max <- max(d$condition_difference, na.rm = TRUE) 
-data_min <- min(d$condition_difference, na.rm = TRUE) 
-scale_data <- data_max - data_min
-noise_max <- max(noise_dataset_2plot$noise_SPLnorm, na.rm = TRUE)
-noise_min <- min(noise_dataset_2plot$noise_SPLnorm, na.rm = TRUE)
-scale_noise <- noise_max - noise_min
-scale_plot <- scale_data / scale_noise
-# +noise_max-scale_noise
+secylabel <- "Noise level (dB SPL normalised)"
+diff_plot <- plot_av_beta_difference(d,noise_dataset_2plot,secylabel)
 
-dif_plot <- ggplot(data=d, aes(x = beta_freq_NERB, y = condition_difference)) +
-  geom_ribbon(aes(ymin=condition_difference-condition_se, ymax=condition_difference+condition_se), alpha=0.1) +
-  geom_line() +
-  geom_line(data=noise_dataset_2plot, aes(x=frequency_nERB, y=(noise_SPLnorm*scale_plot)+data_max-scale_plot, colour=NULL),linetype="dashed") + 
-  scale_y_continuous(sec.axis = sec_axis(~.*(scale_noise) + scale_noise, name = "Noise level (dB SPL (normalised))"))
+diff_plot
 
-# add labels
-dif_plot <- dif_plot +
-  scale_x_continuous(breaks = bw_ticks_values, label = bw_ticks_labels) +
-  labs( x = "Frequency (kHz)", y = "Average Beta Weight Difference (arb. units)") +
-  theme(legend.position="none") +
-  scale_colour_brewer(palette = "Set1") + 
-  scale_fill_brewer(palette = "Set1")
-
-# set sizes
-dif_plot <- dif_plot +
-  theme(axis.text.x = element_text(colour="grey20",size=text_size,angle=0,hjust=0.5,vjust=0,face="plain"),
-        axis.text.y = element_text(colour="grey20",size=text_size,angle=0,hjust=0,vjust=0.5,face="plain"),  
-        axis.title.x = element_text(colour="grey20",size=text_size,angle=0,hjust=0.5,vjust=0.5,face="plain"),
-        axis.title.y = element_text(colour="grey20",size=text_size,angle=90,hjust=0.5,vjust=0.5,face="plain"))
-
-dif_plot
 # save plot
 save_plot("cm_av_beta_weights_difference.png", dif_plot, device = "png", base_height = NULL,
           base_aspect_ratio = 1.6, base_width =  3.34646,dpi = 450)
 
 ###### Tuning Curves ######
 
-# select just beta_bin_kHz and use for labels - both axis and plot a black point
-# get rid of titles
-
 # load and filter data
 tc_dataset = read.csv('Comparisions_tuning_curves.csv')
 
 tc_dataset %>% filter(roi %in% c("Left", "Right")) ->  tc_dataset_2plot
 
-# labels
-tc_bin_values <- select(tc_dataset,beta_bin_NERB) %>% distinct(beta_bin_NERB)
-tc_stim_min_nERB <- min(tc_tick_values)
-tc_stim_max_nERB <- max(tc_tick_values)
-
-tc_stim_middle_nERB <- (tc_stim_max_nERB/2)+(tc_stim_min_nERB/2)
-tc_ticks_values <- c(tc_stim_min_nERB, tc_stim_middle_nERB, tc_stim_max_nERB)
-tc_ticks_labels <- c(nERB2kHz(stim_min_nERB),nERB2kHz(stim_middle_nERB),nERB2kHz(stim_max_nERB))
-tc_ticks_labels <- round(tc_ticks_labels,digits=2)
-
-row.has.na <- apply(tc_dataset, 1, function(x){any(is.na(x))})
-sum(row.has.na)
-tc_dataset <- tc_dataset[!row.has.na,]
-
-tc_dataset_2plot_sum <-summarySE(tc_dataset,measurevar="beta_weight_A_True",groupvars=c("beta_freq_NERB","beta_bin_NERB","acquistion"))
-
-
-tc_plot <- ggplot(tc_dataset_2plot_sum, aes(x=beta_freq_NERB, y=beta_weight_A_True, colour=acquistion)) + 
-  geom_ribbon(aes(ymin=beta_weight_A_True-se, ymax=beta_weight_A_True+se, fill=acquistion), alpha=0.1, linetype="blank") +
-  geom_line() +
-  geom_point() +
-  facet_wrap(~ beta_bin_NERB, nrow = 2) +
-  theme(strip.background = element_blank(),
-        strip.text.x = element_blank()) +
-  geom_segment(data=tc_bin_values, aes(x=as.numeric(beta_bin_NERB), y = 0, xend = as.numeric(beta_bin_NERB), yend = 1.6, colour=NULL), linetype="dashed")
-
-tc_plot <- tc_plot +
-  scale_x_continuous(breaks = tc_ticks_values, label = tc_ticks_labels) +
-  labs( x = "Frequency (kHz)", y = "Average Beta Weight (arb. units)") +
-  theme(legend.position="none") +
-  theme(strip.background =element_rect(fill="white")) + 
-  scale_colour_brewer(palette = "Set1") + 
-  scale_fill_brewer(palette = "Set1")
-
-# set sizes
-tc_plot <- tc_plot +
-  theme(axis.text.x = element_text(colour="grey20",size=text_size,angle=0,hjust=0.5,vjust=0,face="plain"),
-        axis.text.y = element_text(colour="grey20",size=text_size,angle=0,hjust=0,vjust=0,face="plain"),  
-        axis.title.x = element_text(colour="grey20",size=text_size,angle=0,hjust=0.5,vjust=0,face="plain"),
-        axis.title.y = element_text(colour="grey20",size=text_size,angle=90,hjust=0.5,vjust=0.5,face="plain"))
+tc_plot <- plot_tuning_curves(tc_dataset)
 
 tc_plot
 
@@ -177,45 +73,79 @@ save_plot("sHL_tuning_curves.png", tc_plot, device = "png", base_height = NULL,
 # Importing the dataset
 ve_dataset = read.csv('Comparisions_voxel_estimates.csv')
 
-# set plot labels
-fd_ticks_values <- c(0, 10, 20, 30, 40)
-fd_ticks_labels <- nERB2kHz(fd_ticks_values)
-fd_ticks_labels <- round(fd_ticks_labels,digits=2)
-
 ve_dataset %>% 
   filter(estimation == 'population Centre Frequency')  %>%
-  filter(roi %in% c("Left", "Right")) ->  ve_dataset_histo
+  filter(roi %in% c("Left", "Right")) ->  ve_dataset_acquistion
 
-fhist_plot <- ggplot(data = ve_dataset_histo, mapping = aes(x = frequency_nERB, fill = acquistion, colour = NULL)) + 
-  geom_density(alpha=0.3)+
-  geom_line(data=noise_dataset_2plot, aes(x=frequency_nERB, y=noise_SPLnorm*0.05, colour=NULL, fill=NULL),linetype="dashed") 
+legend_location <- c(0.8,0.8)
+fhist_plot_acquistion <- plot_hist_density_acquistion(ve_dataset_acquistion,legend_location)
 
-fhist_plot <- fhist_plot +
-  scale_x_continuous(breaks = fd_ticks_values, label = fd_ticks_labels) +
-  labs( x = "Frequency (kHz)", y = "Voxel Count") +
-  theme(legend.position="none") +
-  theme(strip.background =element_rect(fill="white")) + 
-  scale_colour_brewer(palette = "Set1") + 
-  scale_fill_brewer(palette = "Set1")
-
-# set sizes
-fhist_plot <- fhist_plot +
-  theme(axis.text.x = element_text(colour="grey20",size=text_size,angle=0,hjust=0.5,vjust=0.5,face="plain"),
-        axis.text.y = element_text(colour="grey20",size=text_size,angle=0,hjust=0.5,vjust=0.5,face="plain"),  
-        axis.title.x = element_text(colour="grey20",size=text_size,angle=0,hjust=0.5,vjust=0,face="plain"),
-        axis.title.y = element_text(colour="grey20",size=text_size,angle=90,hjust=0.5,vjust=0.5,face="plain"))
-
-
-fhist_plot
+fhist_plot_acquistion
 
 # save plot
-save_plot("7T_freq_dist.png", fhist_plot, device = "png", base_height = NULL,
+save_plot("7T_freq_acquistion.png", fhist_plot_acquistion, device = "png", base_height = NULL,
           base_aspect_ratio = 1.5, base_width =  3.34646,dpi = 450)
-#########
+##
+
+ve_dataset %>% 
+  filter(acquistion == 'Sparse')  %>%
+  filter(location %in% c("Both")) ->  ve_dataset_estimate
+
+fhist_plot_estimate <- plot_hist_density_estimate(ve_dataset_estimate,legend_location)
+
+fhist_plot_estimate
+
+# save plot
+save_plot("7T_freq_estimate.png", fhist_plot_estimate, device = "png", base_height = NULL,
+          base_aspect_ratio = 1.5, base_width =  3.34646,dpi = 450)
+
+ve_dataset %>% 
+  filter(acquistion == 'Sparse')  %>%
+  filter(estimation %in% c("Debiased Centriod", "population Centre Frequency")) %>%
+  filter(location %in% c("Both")) -> ve_dataset_analysis
+
+fhist_plot_analysis <- plot_hist_density_analysis(ve_dataset_analysis,legend_location)
+
+fhist_plot_analysis
+
+# save plot
+save_plot("7T_freq_analysis.png", fhist_plot_analysis, device = "png", base_height = NULL,
+          base_aspect_ratio = 1.5, base_width =  3.34646,dpi = 450)
+
+
+#### correlations
+
+# between runs
+# between conditions
+# between glm estimation
+# between analysis
 
 
 
+ve_dataset %>%
+  filter(location == "Both") %>%
+  filter(hemisphere == "Left" | roi == "Right") %>%
+  filter(concatenation != 'Sparse')  %>%
+  filter(concatenation != 'Continuous')  %>%
+  filter(analysis != 'GLM')  %>%
+  select(voxelID, subjectID, concatenation, frequency_nERB) %>%
+  spread(key=concatenation, value = frequency_nERB) %>%
+  select(-voxelID, -subjectID) -> ve_dataset_analysis_correlations
 
+row.has.na <- apply(ve_dataset_analysis_correlations, 1, function(x){any(is.na(x))})
+sum(row.has.na)
+ve_dataset_analysis_correlations <- ve_dataset_analysis_correlations[!row.has.na,]
+
+ve_dataset_analysis_correlations %>% cor() -> ve_corr_analysis_matrix
+
+correlations_plot <- plot_correlations(ve_corr_analysis_matrix)
+
+correlations_plot
+
+### scatter plots - NO BEN
+
+dat$density <- get_density(dat$x, dat$y)
+ggplot(dat) + geom_point(aes(x, y, color = density)) + scale_color_viridis()
 
 # Importing the dataset
 # filenames <- 'Comparisions_tuning_curves.csv','Comparisions_beta_weights.csv'

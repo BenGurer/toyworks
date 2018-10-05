@@ -5,7 +5,9 @@ library(corrplot)
 library(scales) # to access break formatting functions
 library(RColorBrewer)
 library(modelr)
-library(plyr); library(dplyr)
+library(plyr)
+library(dplyr)
+library(reshape2)
 
 f_bin<-function(x,y,nBins,N){
   
