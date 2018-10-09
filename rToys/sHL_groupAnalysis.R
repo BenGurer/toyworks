@@ -1,64 +1,4 @@
 # Group analysis: Simulated hearing loss
-library(tidyverse)
-library(cowplot)
-library(corrplot)
-library(scales) # to access break formatting functions
-library(RColorBrewer)
-library(modelr)
-library(plyr); library(dplyr)
-library(reshape2)
-
-# convert nERB to kHz
-nERB2kHz <- function(nERB) {
-  
-  # converts nERB (ERB numbers) to  kHz
-  A = 24.7/1000; B = 4.37;
-  kHz <- 1/B*(exp(A*B*nERB)-1);
-  
-}
-
-## Summarizes data.
-## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
-##   data: a data frame.
-##   measurevar: the name of a column that contains the variable to be summariezed
-##   groupvars: a vector containing names of columns that contain grouping variables
-##   na.rm: a boolean that indicates whether to ignore NA's
-##   conf.interval: the percent range of the confidence interval (default is 95%)
-summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
-                      conf.interval=.95, .drop=TRUE) {
-  library(plyr)
-  
-  # New version of length which can handle NA's: if na.rm==T, don't count them
-  length2 <- function (x, na.rm=FALSE) {
-    if (na.rm) sum(!is.na(x))
-    else       length(x)
-  }
-  
-  # This does the summary. For each group's data frame, return a vector with
-  # N, mean, and sd
-  datac <- ddply(data, groupvars, .drop=.drop,
-                 .fun = function(xx, col) {
-                   c(N    = length2(xx[[col]], na.rm=na.rm),
-                     mean = mean   (xx[[col]], na.rm=na.rm),
-                     sd   = sd     (xx[[col]], na.rm=na.rm)
-                   )
-                 },
-                 measurevar
-  )
-  
-  # Rename the "mean" column    
-  datac <- rename(datac, c("mean" = measurevar))
-  
-  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
-  
-  # Confidence interval multiplier for standard error
-  # Calculate t-statistic for confidence interval: 
-  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
-  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
-  datac$ci <- datac$se * ciMult
-  
-  return(datac)
-}
 
 # set working directory to correct folder
 # setwd("E:/OneDrive - The University of Nottingham/data/hearingLossSimulation/groupAnalysis")
@@ -70,8 +10,90 @@ setwd("C:/Users/bengu/Google Drive/data/hearingLossSimulation/groupAnalysis")
 # load and filter data
 noise_dataset = read.csv('Sensation_Level.csv')
 
-noise_dataset %>% filter(Averaging %in% c('None')) ->  noise_dataset_2plot
-noise_dataset %>% filter(Averaging %in% c('Moving Average')) ->  noise_dataset_2plot_mv
+noise_dataset %>% filter(Averaging %in% c('None')) %>% dplyr::rename(noise = noise_SLnorm) ->  noise_dataset_2plot
+noise_dataset %>% filter(Averaging %in% c('Moving Average')) %>% dplyr::rename(noise = noise_SLnorm) ->  noise_dataset_2plot_mv
+
+
+###### Average Beta weights ######
+
+# load and filter data
+bw_dataset = read.csv('sHL_beta_weights.csv')
+
+bw_dataset %>% filter(beta_averaging %in% c('Moving Average')) %>% 
+  filter(roi %in% c("Left", "Right")) ->  bw_dataset_2plot
+
+legend_location <- c(0.05,0.9)
+bw_plot <- plot_av_beta_weights(bw_dataset_2plot, legend_location)
+
+bw_plot
+
+# save plot
+save_plot("sHL_av_beta_weights.png", bw_plot, device = "png", base_height = NULL,
+          base_aspect_ratio = 1.1, base_width =  3.34646,dpi = 450)
+
+
+# difference and noise plots
+bw_dataset_2plot_sum <-summarySE(bw_dataset_2plot,measurevar="beta_weight",groupvars=c("beta_freq_NERB","acquistion"), na.rm=TRUE)
+
+d_difference  <-  bw_dataset_2plot_sum %>% 
+  select(c("acquistion", "beta_weight", "beta_freq_NERB")) %>% 
+  spread(acquistion, beta_weight) %>% 
+  mutate(condition_difference = NH - sHL) %>% 
+  select(c("beta_freq_NERB", "condition_difference"))
+
+d_diff_se  <-  bw_dataset_2plot_sum %>% 
+  select(c("acquistion", "se", "beta_freq_NERB")) %>% 
+  spread(acquistion, se) %>% 
+  mutate(condition_se = NH + sHL) %>% 
+  select(c("beta_freq_NERB", "condition_se"))
+
+d <- bind_cols(d_difference,d_diff_se) %>% 
+  select(-beta_freq_NERB1)
+
+secylabel <- "Noise level (dB SL normalised)"
+legend_location <- c(0.6,0.2)
+diff_plot <- plot_av_beta_difference(d,noise_dataset_2plot_mv,secylabel,legend_location)
+
+diff_plot
+
+# save plot
+save_plot("sHL_av_beta_weights_difference.png", diff_plot, device = "png", base_height = NULL,
+          base_aspect_ratio = 1.1, base_width =  3.84646,dpi = 450)
+
+###### Tuning Curves ######
+
+# load and filter data
+tc_dataset = read.csv('sHL_tuning_curves.csv')
+
+tc_dataset %>% filter(roi %in% c("Left", "Right")) ->  tc_dataset_2plot
+
+tc_plot <- plot_tuning_curves(tc_dataset_2plot)
+
+tc_plot
+
+# save plot
+save_plot("sHL_tuning_curves.png", tc_plot, device = "png", base_height = NULL,
+          base_aspect_ratio = 1.6, base_width =  6.9291339,dpi = 450)
+
+### Frequency distribution
+
+# Importing the dataset
+# filenames <- 'Comparisions_tuning_curves.csv','Comparisions_beta_weights.csv'
+ve_dataset = read.csv('sHL_voxel_estimates.csv')
+
+ve_dataset %>% 
+  filter(estimation == 'population Centre Frequency')  %>%
+  filter(roi %in% c("Left", "Right")) ->  ve_dataset_histo
+
+legend_location <- c(0.65,0.9)
+fhist_plot <- plot_hist_freqhist_analysis(ve_dataset_histo,legend_location)
+
+fhist_plot
+
+# save plot
+save_plot("sHL_freq_dist.png", fhist_plot, device = "png", base_height = NULL,
+          base_aspect_ratio = 1.2, base_width =  3.34646,dpi = 450)
+######
 
 ###### Average Beta weights ######
 

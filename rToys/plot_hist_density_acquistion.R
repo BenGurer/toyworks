@@ -10,8 +10,9 @@ plot_hist_density_acquistion <- function(ve_dataset_histo,egend_location){
   stim_middle_nERB = 18.2740
 
 fhist_plot <- ggplot(data = ve_dataset_histo, mapping = aes(x = frequency_nERB, fill = acquistion, colour = acquistion)) + 
-  geom_density(alpha=0.3)+
-  geom_line(data=noise_dataset_2plot, aes(x=frequency_nERB, y=noise_SPLnorm*0.05, colour=NULL, fill=NULL),linetype="dashed") 
+  geom_density(alpha=0.3)
+# +
+#   geom_line(data=noise_dataset_2plot, aes(x=frequency_nERB, y=noise_SPLnorm*0.05, colour=NULL, fill=NULL),linetype="dashed") 
 
 fhist_plot <- fhist_plot +
   scale_x_continuous(breaks = fd_ticks_values, label = fd_ticks_labels) +

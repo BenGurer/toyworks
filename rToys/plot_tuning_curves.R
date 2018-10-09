@@ -1,9 +1,9 @@
-plot_tuning_curves<- function(tc_dataset){
+plot_tuning_curves<- function(tc_dataset_2plot){
   
   
 text_size = 9
 
-tc_bin_values <- select(tc_dataset,beta_bin_NERB) %>% distinct(beta_bin_NERB)
+tc_bin_values <- select(tc_dataset_2plot,beta_bin_NERB) %>% distinct(beta_bin_NERB)
 tc_stim_min_nERB <- min(tc_bin_values)
 tc_stim_max_nERB <- max(tc_bin_values)
 
@@ -12,12 +12,12 @@ tc_ticks_values <- c(tc_stim_min_nERB, tc_stim_middle_nERB, tc_stim_max_nERB)
 tc_ticks_labels <- nERB2kHz(tc_ticks_values)
 tc_ticks_labels <- round(tc_ticks_labels,digits=2)
 
-row.has.na <- apply(tc_dataset, 1, function(x){any(is.na(x))})
+row.has.na <- apply(tc_dataset_2plot, 1, function(x){any(is.na(x))})
 sum(row.has.na)
-tc_dataset <- tc_dataset[!row.has.na,]
+tc_dataset_2plot <- tc_dataset_2plot[!row.has.na,]
 
 # tc_dataset_2plot_sum <-summarySE(tc_dataset,measurevar="beta_weight_A_True",groupvars=c("beta_freq_NERB","beta_bin_NERB","acquistion"))
-tc_dataset_2plot_sum <-summarySE(tc_dataset,measurevar="beta_weight",groupvars=c("beta_freq_NERB","beta_bin_NERB","acquistion"))
+tc_dataset_2plot_sum <-summarySE(tc_dataset_2plot,measurevar="beta_weight",groupvars=c("beta_freq_NERB","beta_bin_NERB","acquistion"), na.rm=TRUE)
 
 y_max <-max(tc_dataset_2plot_sum$beta_weight)
 
@@ -54,7 +54,7 @@ tc_plot <- tc_plot +
 
 # set sizes
 tc_plot <- tc_plot +
-  theme(axis.text.x = element_text(colour="grey20",size=text_size,angle=0,hjust=0.5,vjust=0,face="plain"),
+  theme(axis.text.x = element_text(colour="grey20",size=text_size,angle=45,hjust=0.5,vjust=0.75,face="plain"),
         axis.text.y = element_text(colour="grey20",size=text_size,angle=0,hjust=0,vjust=0,face="plain"),  
         axis.title.x = element_text(colour="grey20",size=text_size,angle=0,hjust=0.5,vjust=0,face="plain"),
         axis.title.y = element_text(colour="grey20",size=text_size,angle=90,hjust=0.5,vjust=0.5,face="plain"))

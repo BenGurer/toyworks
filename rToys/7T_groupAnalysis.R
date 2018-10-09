@@ -7,8 +7,8 @@ setwd("C:/Users/bengu/Google Drive/data/CorticalMagnification/groupAnalysis")
 # load noise
 noise_dataset = read.csv('scanner_noise.csv')
 
-noise_dataset %>% filter(Averaging %in% c('None')) ->  noise_dataset_2plot
-noise_dataset %>% filter(Averaging %in% c('Moving Average')) ->  noise_dataset_2plot_mv
+noise_dataset %>% filter(Averaging %in% c('None')) %>% dplyr::rename(noise = noise_SPLnorm) ->  noise_dataset_2plot
+noise_dataset %>% filter(Averaging %in% c('Moving Average')) %>% dplyr::rename(noise = noise_SPLnorm) ->  noise_dataset_2plot_mv
 
 ###### Average Beta weights ######
 
@@ -24,11 +24,13 @@ bw_plot <- plot_av_beta_weights(bw_dataset_2plot, legend_location)
 bw_plot
 
 # save plot
-save_plot("cm_av_beta_weights.png", bw_plot, device = "png", base_height = NULL,
+save_plot("7T_av_beta_weights.png", bw_plot, device = "png", base_height = NULL,
           base_aspect_ratio = 1.1, base_width =  3.34646,dpi = 450)
 
 
 # difference and noise plots
+bw_dataset_2plot_sum <-summarySE(bw_dataset_2plot,measurevar="beta_weight",groupvars=c("beta_freq_NERB","beta_freq_kHz","acquistion"))
+
 d_difference  <-  bw_dataset_2plot_sum %>% 
   select(c("acquistion", "beta_weight", "beta_freq_NERB")) %>% 
   spread(acquistion, beta_weight) %>% 
@@ -45,13 +47,14 @@ d <- bind_cols(d_difference,d_diff_se) %>%
   select(-beta_freq_NERB1)
 
 secylabel <- "Noise level (dB SPL normalised)"
-diff_plot <- plot_av_beta_difference(d,noise_dataset_2plot,secylabel)
+legend_location <- c(0.6,0.2)
+diff_plot <- plot_av_beta_difference(d,noise_dataset_2plot,secylabel,legend_location)
 
 diff_plot
 
 # save plot
-save_plot("cm_av_beta_weights_difference.png", dif_plot, device = "png", base_height = NULL,
-          base_aspect_ratio = 1.6, base_width =  3.34646,dpi = 450)
+save_plot("7T_av_beta_weights_difference.png", diff_plot, device = "png", base_height = NULL,
+          base_aspect_ratio = 1.1, base_width =  3.84646,dpi = 450)
 
 ###### Tuning Curves ######
 
@@ -65,8 +68,8 @@ tc_plot <- plot_tuning_curves(tc_dataset)
 tc_plot
 
 # save plot
-save_plot("sHL_tuning_curves.png", tc_plot, device = "png", base_height = NULL,
-          base_aspect_ratio = 1.1, base_width =  6.9291339,dpi = 450)
+save_plot("7T_tuning_curves.png", tc_plot, device = "png", base_height = NULL,
+          base_aspect_ratio = 1.6, base_width =  6.9291339,dpi = 450)
 
 ### Frequency distribution
 
@@ -84,7 +87,7 @@ fhist_plot_acquistion
 
 # save plot
 save_plot("7T_freq_acquistion.png", fhist_plot_acquistion, device = "png", base_height = NULL,
-          base_aspect_ratio = 1.5, base_width =  3.34646,dpi = 450)
+          base_aspect_ratio = 1.2, base_width =  3.34646,dpi = 450)
 ##
 
 ve_dataset %>% 
@@ -97,7 +100,7 @@ fhist_plot_estimate
 
 # save plot
 save_plot("7T_freq_estimate.png", fhist_plot_estimate, device = "png", base_height = NULL,
-          base_aspect_ratio = 1.5, base_width =  3.34646,dpi = 450)
+          base_aspect_ratio = 1.2, base_width =  3.34646,dpi = 450)
 
 ve_dataset %>% 
   filter(acquistion == 'Sparse')  %>%
@@ -110,7 +113,7 @@ fhist_plot_analysis
 
 # save plot
 save_plot("7T_freq_analysis.png", fhist_plot_analysis, device = "png", base_height = NULL,
-          base_aspect_ratio = 1.5, base_width =  3.34646,dpi = 450)
+          base_aspect_ratio = 1.2, base_width =  3.34646,dpi = 450)
 
 
 #### correlations
