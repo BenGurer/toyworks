@@ -1,5 +1,5 @@
 plot_hist_density_estimate <- function(ve_dataset_histo,legend_location){
-  
+  text_size = 9
   # set plot labels
   fd_ticks_values <- c(0, 10, 20, 30, 40)
   fd_ticks_labels <- nERB2kHz(fd_ticks_values)

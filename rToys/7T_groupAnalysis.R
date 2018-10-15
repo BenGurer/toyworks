@@ -80,7 +80,7 @@ ve_dataset %>%
   filter(estimation == 'population Centre Frequency')  %>%
   filter(roi %in% c("Left", "Right")) ->  ve_dataset_acquistion
 
-legend_location <- c(0.8,0.8)
+legend_location <- c(0.6,0.9)
 fhist_plot_acquistion <- plot_hist_density_acquistion(ve_dataset_acquistion,legend_location)
 
 fhist_plot_acquistion
@@ -94,6 +94,7 @@ ve_dataset %>%
   filter(acquistion == 'Sparse')  %>%
   filter(location %in% c("Both")) ->  ve_dataset_estimate
 
+legend_location <- c(0.6,0.8)
 fhist_plot_estimate <- plot_hist_density_estimate(ve_dataset_estimate,legend_location)
 
 fhist_plot_estimate
@@ -107,6 +108,7 @@ ve_dataset %>%
   filter(estimation %in% c("Debiased Centriod", "population Centre Frequency")) %>%
   filter(location %in% c("Both")) -> ve_dataset_analysis
 
+legend_location <- c(0.6,0.9)
 fhist_plot_analysis <- plot_hist_density_analysis(ve_dataset_analysis,legend_location)
 
 fhist_plot_analysis

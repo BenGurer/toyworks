@@ -96,6 +96,19 @@ nDLF2kHz <- function(d) {
   kHz <- spline(y,x,xout=d)
   return(kHz$y)
 }
+nDLF_fyr <- function(f) {
+  # convert frequency to nDLF using equation from first year report (fyr)
+  f = f*1000 # convert from kHz to Hz
+  a = 0.0214; k = -0.15; m = 5.056; SL = 45;
+nDLF = -((2*(a*sqrt(f) + 1) * exp (-(a* SL * sqrt(f) + k *SL + m)/SL))/a^2)
+}
+nDLF2kHz_fyr <- function(d) {
+  x = seq(0.02, 20, by = 0.001)
+  y <- nDLF_fyr(x)
+  kHz <- spline(y,x,xout=d)
+  return(kHz$y)
+}
+
 ERB <- function(f) {
   A = 24.7/1000; B = 4.37;
   ERB = A*(B*f+1);
@@ -267,4 +280,6 @@ deriv_coef<-function(x) {
   rr[is.na(rr)] <- 0
   rr
 }
+
+
 
